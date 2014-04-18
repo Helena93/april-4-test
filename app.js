@@ -2,42 +2,48 @@
 /**
  * Module dependencies.
  */
-
-var express = require('express');
-var routes = require('./routes');
-var user = require('./routes/user');
 var http = require('http');
+var util = require('util');
+var express = require('express');
 var path = require('path');
 
 var app = express();
 
-// all environments
 app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-app.use(express.favicon());
-app.use(express.logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded());
-app.use(express.methodOverride());
-app.use(app.router);
-app.use(express.static(path.join(__dirname, 'public')));
 
-// development only
-if ('development' == app.get('env')) {
-  app.use(express.errorHandler());
+
+var students = [
+    { name: 'Lena' },
+    { name: 'Sasha ' },
+    { name: 'Katia' },
+    { name: 'Liza ' }
+];
+
+
+function fetchFromDatabase (query, callback) {
+    setTimeout(function () {
+        if (query !== 'students') {
+            callback('Invalid query');
+            return;
+        }
+
+        callback(null, students);
+    }, 500);
 }
 
-// TODO: реализовать все роуты, которые нужны для прохождения тестов из test.js
-// Тест можно запустить командой `./node_modules/.bin/nodeunit test.js`
 
-// TODO: хранение пользователей организовать в памяти, без внешней базы данных
+app.get('/students', function (req, res, next) {
+    fetchFromDatabase('students', function (err, students) {
+        if (err) {
+            res.send(500, { error: 'Error connecting to database'});
+            return;
+        }
 
-// TODO: структурировать и изолировать код обрабатывающий запросы к /users
-
-app.get('/', routes.index);
-app.get('/users', user.list);
-
-http.createServer(app).listen(app.get('port'), function(){
-  console.log('Express server listening on port ' + app.get('port'));
+        res.write(JSON.stringify(students));
+        res.end();
+    });
 });
+
+app.listen(8001);
